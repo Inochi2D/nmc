@@ -17,6 +17,8 @@ struct LLVM_LIBRARY_VISIBILITY WasmPointersSpillPass : public llvm::PassInfoMixi
      return llvm::PreservedAnalyses::all();
     }
   }
+
+  static bool isRequired() { return true; }
   static llvm::StringRef name() { return WasmPointersSpill::getPassName(); }
 
   WasmPointersSpillPass() : pass() {}

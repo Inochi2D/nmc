@@ -136,6 +136,8 @@ struct LLVM_LIBRARY_VISIBILITY GarbageCollect2StackPass : public llvm::PassInfoM
      return llvm::PreservedAnalyses::all();
     }
   }
+
+  static bool isRequired() { return true; }
   static llvm::StringRef name() { return GarbageCollect2Stack::getPassName(); }
 
   GarbageCollect2StackPass() : pass() {}

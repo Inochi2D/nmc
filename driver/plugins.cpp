@@ -86,7 +86,7 @@ llvm::SmallVector<llvm::PassPlugin, 1> llvm_plugins;
 /// added explicitly when building the optimization pipeline.
 void loadLLVMPluginNewPM(const std::string &filename) {
 
-  auto plugin = llvm::PassPlugin::Load(filename);
+  auto plugin = llvm::PassPlugin::load(filename);
   if (!plugin) {
     error(Loc(), "Error loading plugin '%s': %s", filename.c_str(),
           llvm::toString(plugin.takeError()).c_str());

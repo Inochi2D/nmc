@@ -83,6 +83,8 @@ struct LLVM_LIBRARY_VISIBILITY SimplifyDRuntimeCallsPass : public llvm::PassInfo
      return llvm::PreservedAnalyses::all();
     }
   }
+
+  static bool isRequired() { return true; }
   static llvm::StringRef name() { return SimplifyDRuntimeCalls::getPassName(); }
 
   SimplifyDRuntimeCallsPass() : pass() {}

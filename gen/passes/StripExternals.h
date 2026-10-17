@@ -23,6 +23,7 @@ struct LLVM_LIBRARY_VISIBILITY StripExternalsPass : public llvm::PassInfoMixin<S
     }
   }
 
+  static bool isRequired() { return true; }
   static llvm::StringRef name() { return "StripExternals"; }
 
   StripExternalsPass() : pass() {}
