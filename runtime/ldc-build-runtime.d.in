@@ -32,7 +32,7 @@ string defaultLdcExecutable;
 Config config;
 
 int main(string[] args) {
-    enum exeName = "ldc2" ~ exeSuffix;
+    enum exeName = "nmc" ~ exeSuffix;
     defaultLdcExecutable = buildPath(thisExePath.dirName, exeName);
 
     parseCommandLine(args);
@@ -69,7 +69,7 @@ void findLdcExecutable() {
         return;
     }
 
-    writefln(".: Please specify LDC executable via '--ldc=<path/to/ldc2%s>'. Aborting.", exeSuffix);
+    writefln(".: Please specify LDC executable via '--nmc=<path/to/nmc%s>'. Aborting.", exeSuffix);
     exit(1);
 }
 
@@ -83,7 +83,7 @@ void prepareBuildDir() {
         } else {
             writefln(".: Resetting build directory: %s", config.buildDir);
             auto items = dirEntries(config.buildDir, SpanMode.shallow, false).array;
-            const ldcSrc = buildPath(config.buildDir, "ldc-src");
+            const ldcSrc = buildPath(config.buildDir, "nmc-src");
             foreach (i; items) {
                 if (i.isFile) {
                     remove(i.name);
@@ -103,19 +103,19 @@ void prepareBuildDir() {
 void prepareLdcSource() {
     if (config.ldcSourceDir !is null) {
         if (!config.ldcSourceDir.exists) {
-            writefln(".: Error: LDC source directory not found: %s", config.ldcSourceDir);
+            writefln(".: Error: NMC source directory not found: %s", config.ldcSourceDir);
             exit(1);
         }
         config.ldcSourceDir = config.ldcSourceDir.absolutePath;
         return;
     }
 
-    const ldcSrc = "ldc-src";
+    const ldcSrc = "nmc-src";
     config.ldcSourceDir = buildPath(config.buildDir, ldcSrc);
     if (buildPath(config.ldcSourceDir, "runtime").exists)
         return;
 
-    // Download & extract LDC source archive if <buildDir>/ldc-src/runtime doesn't exist yet.
+    // Download & extract LDC source archive if <buildDir>/nmc-src/runtime doesn't exist yet.
 
     const wd = WorkingDirScope(config.buildDir);
 
@@ -155,7 +155,7 @@ void runCMake() {
 
     string[] args = [
         "cmake",
-        "-DLDC_EXE_FULL=" ~ config.ldcExecutable,
+        "-DNMC_EXE_FULL=" ~ config.ldcExecutable,
         "-DLDMD_EXE_FULL=" ~ ldmdExecutable,
         "-DDMDFE_MINOR_VERSION=@DMDFE_MINOR_VERSION@",
         "-DDMDFE_PATCH_VERSION=@DMDFE_PATCH_VERSION@",

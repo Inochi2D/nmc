@@ -11,12 +11,12 @@
 
 namespace ldc {
 
-const char * const ldc_version = "@LDC_VERSION@";
+const char * const ldc_version = "@NMC_VERSION@";
 const char * const dmd_version = "v@DMD_VERSION@";
 const char * const llvm_version = "@LLVM_VERSION_STRING@";
 const char * const llvm_version_base = "@LLVM_VERSION_BASE_STRING@";
 const char * const built_with_Dcompiler_version = "@D_COMPILER_VERSION_STRING@";
 
-const unsigned ldc_version_major = @LDC_VERSION_MAJOR@;
-const unsigned ldc_version_minor = @LDC_VERSION_MINOR@;
+const unsigned ldc_version_major = @NMC_VERSION_MAJOR@;
+const unsigned ldc_version_minor = @NMC_VERSION_MINOR@;
 }

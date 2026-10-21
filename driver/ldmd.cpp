@@ -19,8 +19,8 @@
 //
 //===----------------------------------------------------------------------===//
 
-#ifndef LDC_EXE_NAME
-#error "Please define LDC_EXE_NAME to the name of the LDC executable to use."
+#ifndef NMC_EXE_NAME
+#error "Please define NMC_EXE_NAME to the name of the NMC executable to use."
 #endif
 
 #include "driver/args.h"
@@ -280,7 +280,7 @@ Where:\n\
   -v                verbose\n\
   -vasm             generate additional textual assembly files (*.s)\n\
   -vcolumns         print character (column) numbers in diagnostics\n\
-  -vdmd             print the underlying LDC command line\n\
+  -vdmd             print the underlying NMC command line\n\
   -verror-style=[digitalmars|gnu|sarif]\n\
                     set the style for file/line number annotations on compiler messages\n\
   -verror-supplements=<num>\n\
@@ -747,7 +747,9 @@ void translateArgs(const llvm::SmallVectorImpl<const char *> &ldmdArgs,
        * -main
        */
       else if (startsWith(p + 1, "man")) {
-        browse("https://wiki.dlang.org/LDC");
+
+        // TODO: Add manual
+        // browse("https://wiki.dlang.org/LDC");
         exit(EXIT_SUCCESS);
       } else if (strcmp(p + 1, "run") == 0) {
         ldcArgs.insert(ldcArgs.end(), args.begin() + i, args.end());
@@ -762,7 +764,7 @@ void translateArgs(const llvm::SmallVectorImpl<const char *> &ldmdArgs,
         continue;
 
       Lnot_in_ldc:
-        warning("command-line option '%s' not yet supported by LDC.", p);
+        warning("command-line option '%s' not yet supported by NMC.", p);
         continue;
       }
     } else {
@@ -814,7 +816,7 @@ std::string locateBinary(std::string exeName) {
 static llvm::SmallVector<const char *, 32> ldmdArguments;
 
 /// LDMD's entry point, C main.
-#if LDC_WINDOWS_WMAIN
+#if NMC_WINDOWS_WMAIN
 int wmain(int argc, const wchar_t **originalArgv)
 #else
 int main(int argc, const char **originalArgv)
@@ -832,13 +834,13 @@ int main(int argc, const char **originalArgv)
 int cppmain() {
   exe_path::initialize(ldmdArguments[0]);
 
-  std::string ldcExeName = LDC_EXE_NAME;
+  std::string ldcExeName = NMC_EXE_NAME;
 #ifdef _WIN32
   ldcExeName += ".exe";
 #endif
   const std::string ldcPath = locateBinary(ldcExeName);
   if (ldcPath.empty()) {
-    error("Could not locate " LDC_EXE_NAME " executable.");
+    error("Could not locate " NMC_EXE_NAME " executable.");
   }
 
   if (ldmdArguments.size() == 1) {

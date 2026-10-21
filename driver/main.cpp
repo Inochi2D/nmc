@@ -1108,6 +1108,7 @@ void registerPredefinedVersions() {
 #define STR(x) #x
 #define XSTR(x) STR(x)
   VersionCondition::addPredefinedGlobalIdent("LDC_LLVM_" XSTR(LLVM_VERSION_MAJOR));
+  VersionCondition::addPredefinedGlobalIdent("NMC_LLVM_" XSTR(LLVM_VERSION_MAJOR));
 #undef XSTR
 #undef STR
 }

@@ -22,7 +22,7 @@
 #include "gen/irstate.h"
 #include <functional>
 
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
 namespace mlir {
 class MLIRContext;
 class OwningModuleRef;
@@ -34,7 +34,7 @@ namespace ldc {
 class CodeGenerator {
 public:
   CodeGenerator(llvm::LLVMContext &context,
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
                 mlir::MLIRContext &mlirContext,
 #endif
                 bool singleObj);
@@ -42,7 +42,7 @@ public:
   ~CodeGenerator();
   void emit(Module *m);
 
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
   void emitMLIR(Module *m);
 #endif
 
@@ -55,12 +55,12 @@ private:
   void prepareLLModule(Module *m);
   void finishLLModule(Module *m);
   void writeAndFreeLLModule(const char *filename);
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
   void writeMLIRModule(mlir::OwningModuleRef *module, const char *filename);
 #endif
 
   llvm::LLVMContext &context_;
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
   mlir::MLIRContext &mlirContext_;
 #endif
   int moduleCount_;

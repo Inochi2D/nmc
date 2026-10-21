@@ -48,7 +48,7 @@ string exe_path::getBaseDir() {
 
 string exe_path::getLibDir() {
   llvm::SmallString<128> r(getBaseDir());
-  path::append(r, "lib" LDC_LIBDIR_SUFFIX);
+  path::append(r, "lib" NMC_LIBDIR_SUFFIX);
   return {r.data(), r.size()};
 }
 

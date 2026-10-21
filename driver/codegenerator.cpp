@@ -32,7 +32,7 @@
 #include "llvm/Support/Path.h"
 #include "llvm/Support/ToolOutputFile.h"
 #include "llvm/Support/YAMLTraits.h"
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
 #include "mlir/IR/BuiltinOps.h"
 #include "mlir/IR/MLIRContext.h"
 #endif
@@ -173,12 +173,12 @@ struct InlineAsmDiagnosticHandler : public llvm::DiagnosticHandler {
 
 namespace ldc {
 CodeGenerator::CodeGenerator(llvm::LLVMContext &context,
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
                              mlir::MLIRContext &mlirContext,
 #endif
                              bool singleObj)
     : context_(context),
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
       mlirContext_(mlirContext),
 #endif
       moduleCount_(0), singleObj_(singleObj), ir_(nullptr) {
@@ -315,7 +315,7 @@ void CodeGenerator::emit(Module *m) {
   }
 }
 
-#if LDC_MLIR_ENABLED
+#if NMC_MLIR_ENABLED
 void CodeGenerator::emitMLIR(Module *m) {
   bool const loggerWasEnabled = Logger::enabled();
   if (m->llvmForceLogging && !loggerWasEnabled) {

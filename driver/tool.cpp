@@ -399,7 +399,7 @@ bool setupMsvcEnvironmentImpl(
     std::vector<std::pair<std::wstring, wchar_t *>> *rollback) {
   const auto &triple = *global.params.targetTriple;
 
-  if (env::has(L"VSINSTALLDIR") && !env::has(L"LDC_VSDIR_FORCE")) {
+  if (env::has(L"VSINSTALLDIR") && !env::has(L"NMC_VSDIR_FORCE")) {
     const auto tripleArch = triple.getArch();
     const char *expectedArch = nullptr;
 

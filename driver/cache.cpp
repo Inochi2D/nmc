@@ -52,7 +52,7 @@
 #include <io.h>
 #endif
 
-#if LDC_POSIX
+#if NMC_POSIX
 #include <unistd.h>
 #include <errno.h>
 
@@ -69,6 +69,7 @@ static std::error_code createSymLink(const char *to, const char *from) {
   else
     return std::error_code(errno, std::system_category());
 }
+
 #elif _WIN32
 #include <windows.h>
 namespace llvm {

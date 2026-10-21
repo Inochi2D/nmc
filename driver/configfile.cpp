@@ -142,12 +142,12 @@ bool ConfigFile::locate(std::string &pathstr) {
   }
 #else
   // try the install-prefix/etc
-  p = LDC_INSTALL_PREFIX;
+  p = NMC_INSTALL_PREFIX;
   sys::path::append(p, "etc");
   APPEND_FILENAME_AND_RETURN_IF_EXISTS
 
   // try the install-prefix/etc/ldc
-  p = LDC_INSTALL_PREFIX;
+  p = NMC_INSTALL_PREFIX;
   sys::path::append(p, "etc");
   sys::path::append(p, "nmc");
   APPEND_FILENAME_AND_RETURN_IF_EXISTS

@@ -16,10 +16,10 @@ if (WASI)
   set(CMAKE_ASM_OUTPUT_EXTENSION .o)
 endif()
 
-# Verify required variables if this CMake project is NOT embedded in the LDC CMake project.
+# Verify required variables if this CMake project is NOT embedded in the NMC CMake project.
 if(NOT NMC_EXE)
     if(NOT NMC_EXE_FULL)
-        message(FATAL_ERROR "Please define the path to the LDC executable via -DNMC_EXE_FULL=...")
+        message(FATAL_ERROR "Please define the path to the NMC executable via -DNMC_EXE_FULL=...")
     endif()
     if(NOT DEFINED DMDFE_MINOR_VERSION OR NOT DEFINED DMDFE_PATCH_VERSION)
         message(FATAL_ERROR "Please define the CMake variables DMDFE_MINOR_VERSION and DMDFE_PATCH_VERSION.")
@@ -38,7 +38,7 @@ set(D_EXTRA_FLAGS         ""                                  CACHE STRING "Runt
 set(D_FLAGS_DEBUG         -g;-link-defaultlib-debug;-d-debug  CACHE STRING "Runtime D compiler flags (debug libraries), separated by ';'")
 set(D_FLAGS_RELEASE       -O3;-release;-femit-local-var-lifetime  CACHE STRING "Runtime D compiler flags (release libraries), separated by ';'")
 set(COMPILE_ALL_D_FILES_AT_ONCE ON                            CACHE BOOL   "Compile all D files for the runtime libs in a single command line instead of separately. Disabling this is useful for many CPU cores and/or iterative development.")
-set(RT_ARCHIVE_WITH_LDC   ON                                  CACHE STRING "Whether to archive the static runtime libs via LDC instead of CMake archiver")
+set(RT_ARCHIVE_WITH_LDC   ON                                  CACHE STRING "Whether to archive the static runtime libs via NMC instead of CMake archiver")
 set(RT_CFLAGS             ""                                  CACHE STRING "Runtime extra C compiler flags, separated by ' '")
 set(LD_FLAGS              ""                                  CACHE STRING "Runtime extra C linker flags, separated by ' '")
 set(C_SYSTEM_LIBS         AUTO                                CACHE STRING "C system libraries for linking shared libraries and test runners, separated by ';'")

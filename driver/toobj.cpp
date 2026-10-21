@@ -73,7 +73,7 @@ void codegenModule(llvm::TargetMachine &Target, llvm::Module &m,
   const ComputeBackend::Type cb = getComputeTargetType(&m);
 
   if (cb == ComputeBackend::SPIRV) {
-#ifndef LDC_LLVM_SUPPORTED_TARGET_SPIRV
+#ifndef NMC_LLVM_SUPPORTED_TARGET_SPIRV
     error(Loc(), "Trying to target SPIRV, but LDC is not built to do so!");
     return;
 #endif
