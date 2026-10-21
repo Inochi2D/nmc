@@ -37,24 +37,6 @@
 
 #include "gen/optimizer.h"
 
-#ifdef LDC_LLVM_SUPPORTS_MACHO_DWARF_LINE_AS_REGULAR_SECTION
-// LDC-LLVM >= 20:
-// On Darwin, emit __debug_line section in __DWARF segment as regular
-// (non-debug) section, like DMD, to enable file/line infos in backtraces
-// without having to resort to an atos process. See
-// https://github.com/ldc-developers/ldc/issues/4895
-// https://github.com/dlang/dmd/commit/2bf7d0db29416eacbb01a91e6502140e354ee0ef
-// https://github.com/ldc-developers/llvm-project/commit/356e996bd217afd883adf3da5fe9a16c1102b273
-static llvm::cl::opt<bool, true> preserveDwarfLineSection(
-    "preserve-dwarf-line-section",
-    llvm::cl::desc("Darwin: preserve DWARF __debug_line section during linking "
-                   "for builtin file/line infos in backtraces without having "
-                   "to resort to an atos process."),
-    llvm::cl::Hidden, llvm::cl::ZeroOrMore,
-    llvm::cl::location(ldc::emitMachODwarfLineAsRegularSection),
-    llvm::cl::init(false));
-#endif
-
 // Returns true if 'feature' is enabled and false otherwise. Handles the
 // case where the feature is specified multiple times ('+m,-m'), and
 // takes the last occurrence.
