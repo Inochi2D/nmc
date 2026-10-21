@@ -1,8 +1,22 @@
-# LDC master
+# NMC main
 
 #### Big news
+ - Forked LDC2
+ - Added support for LLVM 24.
+ - Changed name to NMC.
+ - Changed configuration path to not collide with LDC2.
 
 #### Platform support
+
+
+#### Bug fixes
+
+
+
+# LDC Changelogs
+------------------------------------------------------------------------------------
+
+# LDC master
 
 #### Bug fixes
 - dcompute: A `ref` return whose referent is reached through a `Pointer!(as, T)` does not emit an extra load anymore, so a `ref T opIndex()` accessor over a `GlobalPointer!T` no longer faults with `CUDA_ERROR_MISALIGNED_ADDRESS`. (#5284, #5285)

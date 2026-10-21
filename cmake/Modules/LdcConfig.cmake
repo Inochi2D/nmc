@@ -1,4 +1,4 @@
-# Functions used for generating and installing ldc2.conf
+# Functions used for generating and installing nmc.conf
 
 function(defineIfUnset variable)
     if(ARGC EQUAL 1)
@@ -56,12 +56,12 @@ function(formatScalarSetting out_var name)
 endfunction()
 
 
-# Create a ldc2.conf section
+# Create a nmc.conf section
 #
 # Example:
 #
 # makeConfSectionImpl(
-#     FILEPATH "${CMAKE_BINARY_DIR}/ldc2.conf"
+#     FILEPATH "${CMAKE_BINARY_DIR}/nmc.conf"
 #     # The output filename
 #
 #     SECTION "^wasm(32|64)-"
@@ -82,7 +82,7 @@ endfunction()
 #
 # Would generate:
 #
-# $ cat "${CMAKE_BINARY_DIR}/ldc2.conf"
+# $ cat "${CMAKE_BINARY_DIR}/nmc.conf"
 # "^wasm(32|64)-":
 # {
 #     switches ~= [
@@ -137,7 +137,7 @@ function(makeConfSectionImpl)
     )
 endfunction()
 
-# Create a ldc2.conf section
+# Create a nmc.conf section
 #
 # Example:
 #
@@ -149,12 +149,12 @@ endfunction()
 #     # A regex for a target triple or the string "default"
 #
 #     BUILD
-#     # Settings for ldc2.conf when part of this cmake project
+#     # Settings for nmc.conf when part of this cmake project
 #     SWITCHES -a -b
 #     POST_SWITCHES -I${CMAKE_SOURCE_DIR}/runtime/import -c
 #
 #     INSTALL
-#     # Settings for ldc2.conf when installed on a user system
+#     # Settings for nmc.conf when installed on a user system
 #     SWITCHES OVERRIDE -bar
 #     LIB_DIRS "${CMAKE_INSTALL_PREFIX}/lib"
 #     RPATH "${CMAKE_INSTALL_PREFIX}/lib"
@@ -163,7 +163,7 @@ endfunction()
 # The possible settings are described by makeConfSectionImpl.
 #
 # As a shortcut the BUILD and INSTALL arguments may be omitted, making the
-# settings be applied to both build and install ldc2.conf. Example:
+# settings be applied to both build and install nmc.conf. Example:
 #
 # makeConfSection(NAME 10-example SECTION default
 #     SWITCHES -my-important-switch
@@ -207,7 +207,7 @@ function(makeConfSection)
         set(install_conf "${LDC_INSTALL_CONF}/${args_NAME}.conf")
         makeConfSectionImpl(FILEPATH "${install_conf}" SECTION "${args_SECTION}" ${args_INSTALL})
         if(NOT DONT_INSTALL_CONF)
-            install(FILES "${install_conf}" DESTINATION "${CONF_INST_DIR}/ldc2.conf")
+            install(FILES "${install_conf}" DESTINATION "${CONF_INST_DIR}/nmc.conf")
         endif()
     endif()
 endfunction()
@@ -222,12 +222,12 @@ if(NOT DEFINED SYSCONF_INSTALL_DIR)
     endif()
 endif()
 
-set(CONF_INST_DIR ${SYSCONF_INSTALL_DIR} CACHE PATH "Directory in which to install ldc2.conf")
+set(CONF_INST_DIR ${SYSCONF_INSTALL_DIR} CACHE PATH "Directory in which to install nmc.conf")
 if(CONF_INST_DIR STREQUAL "")
     set(DONT_INSTALL_CONF TRUE)
 else()
     set(DONT_INSTALL_CONF FALSE)
 endif()
 
-defineIfUnset(LDC_BUILD_CONF "${CMAKE_BINARY_DIR}/etc/ldc2.conf")
-defineIfUnset(LDC_INSTALL_CONF "${CMAKE_BINARY_DIR}/etc/ldc2_install.conf")
+defineIfUnset(LDC_BUILD_CONF "${CMAKE_BINARY_DIR}/etc/nmc.conf")
+defineIfUnset(LDC_INSTALL_CONF "${CMAKE_BINARY_DIR}/etc/nmc_install.conf")

@@ -17,9 +17,9 @@ if (WASI)
 endif()
 
 # Verify required variables if this CMake project is NOT embedded in the LDC CMake project.
-if(NOT LDC_EXE)
-    if(NOT LDC_EXE_FULL)
-        message(FATAL_ERROR "Please define the path to the LDC executable via -DLDC_EXE_FULL=...")
+if(NOT NMC_EXE)
+    if(NOT NMC_EXE_FULL)
+        message(FATAL_ERROR "Please define the path to the LDC executable via -DNMC_EXE_FULL=...")
     endif()
     if(NOT DEFINED DMDFE_MINOR_VERSION OR NOT DEFINED DMDFE_PATCH_VERSION)
         message(FATAL_ERROR "Please define the CMake variables DMDFE_MINOR_VERSION and DMDFE_PATCH_VERSION.")
@@ -132,7 +132,7 @@ if(${BUILD_SHARED_LIBS} STREQUAL "AUTO")
         set(BUILD_SHARED_LIBS OFF)
     endif()
 endif()
-if(LDC_EXE)
+if(NMC_EXE)
     set(BUILD_SHARED_LIBS ${BUILD_SHARED_LIBS} PARENT_SCOPE) # e.g., for tests/d2/CMakeLists.txt and forwarding to dmd-testsuite
 endif()
 
@@ -356,7 +356,7 @@ if(MULTILIB AND NOT "${TARGET_SYSTEM}" MATCHES "APPLE")
     endif()
 
     set(name "55-target-m${MULTILIB_SUFFIX}")
-    set(sectionPlaceholder "LDC_CONF_MULTILIB_TRIPLE_REGEX")
+    set(sectionPlaceholder "NMC_CONF_MULTILIB_TRIPLE_REGEX")
     makeConfSection(NAME "${name}"
         SECTION "${sectionPlaceholder}"
         BUILD
@@ -367,8 +367,8 @@ if(MULTILIB AND NOT "${TARGET_SYSTEM}" MATCHES "APPLE")
         RPATH ${install_rpath}
     )
 
-    set(build_conf "${LDC_BUILD_CONF}/${name}.conf")
-    set(install_conf "${LDC_INSTALL_CONF}/${name}.conf")
+    set(build_conf "${NMC_BUILD_CONF}/${name}.conf")
+    set(install_conf "${NMC_INSTALL_CONF}/${name}.conf")
     set(confs "${build_conf}" "${install_conf}")
     foreach(conf ${confs})
         # Rename the just-generated config files in order to replace sectionPlaceholder
@@ -379,11 +379,11 @@ if(MULTILIB AND NOT "${TARGET_SYSTEM}" MATCHES "APPLE")
             "${conf}"
             "${sectionPlaceholder}"
             # Next arguments are a compiler invocation for the desired triple
-            "${LDC_EXE_FULL}" -m${MULTILIB_SUFFIX}
+            "${NMC_EXE_FULL}" -m${MULTILIB_SUFFIX}
         )
-        if(LDC_EXE)
+        if(NMC_EXE)
             # We need to get the -m32 target triple but the compiler
-            # is not built yet. We can't depend on LDC_EXE since that
+            # is not built yet. We can't depend on NMC_EXE since that
             # would cause a cycle so pass-through the needed commands
             # up to the root project and let it run them as POST_BUILD
             # commands. This avoids adding the config_files as
@@ -393,17 +393,17 @@ if(MULTILIB AND NOT "${TARGET_SYSTEM}" MATCHES "APPLE")
             # add_custom_command. `BYPRODUCTS` is needed by ninja
             # because it needs to know which command generates the
             # config files that will be installed.
-            list(APPEND _LDC_POST_BUILD_COMMANDS "COMMAND" ${fill_cmd})
-            list(APPEND _LDC_POST_BUILD_BYPRODUCTS "${conf}")
+            list(APPEND _NMC_POST_BUILD_COMMANDS "COMMAND" ${fill_cmd})
+            list(APPEND _NMC_POST_BUILD_BYPRODUCTS "${conf}")
         else()
             execute_process(COMMAND ${fill_cmd})
         endif()
     endforeach()
 endif()
 
-if(LDC_EXE)
-    set(_LDC_POST_BUILD_COMMANDS "${_LDC_POST_BUILD_COMMANDS}" PARENT_SCOPE)
-    set(_LDC_POST_BUILD_BYPRODUCTS "${_LDC_POST_BUILD_BYPRODUCTS}" PARENT_SCOPE)
+if(NMC_EXE)
+    set(_NMC_POST_BUILD_COMMANDS "${_NMC_POST_BUILD_COMMANDS}" PARENT_SCOPE)
+    set(_NMC_POST_BUILD_BYPRODUCTS "${_NMC_POST_BUILD_BYPRODUCTS}" PARENT_SCOPE)
 endif()
 
 #
@@ -460,7 +460,7 @@ macro(dc src_files src_basedir d_flags output_basedir emit_bc all_at_once single
 
     # dc_deps can only contain paths, otherwise cmake will ignore the dependency.
     # See: https://github.com/ldc-developers/ldc/pull/4743#issuecomment-2323156173
-    set(dc_deps ${LDC_EXE_FULL})
+    set(dc_deps ${NMC_EXE_FULL})
 
     set(relative_src_files "")
     set(new_o "")
@@ -496,7 +496,7 @@ macro(dc src_files src_basedir d_flags output_basedir emit_bc all_at_once single
 
             add_custom_command(
                 OUTPUT  ${outfiles}
-                COMMAND ${LDC_EXE_FULL} ${dc_flags} -of=${output_o} ${relative_src_file}
+                COMMAND ${NMC_EXE_FULL} ${dc_flags} -of=${output_o} ${relative_src_file}
                 COMMAND ${renameCommand}
                 WORKING_DIRECTORY ${src_basedir}
                 DEPENDS ${f} ${dc_deps}
@@ -526,7 +526,7 @@ macro(dc src_files src_basedir d_flags output_basedir emit_bc all_at_once single
 
         add_custom_command(
             OUTPUT  ${new_o} ${new_bc}
-            COMMAND ${LDC_EXE_FULL} ${dc_flags} ${relative_src_files}
+            COMMAND ${NMC_EXE_FULL} ${dc_flags} ${relative_src_files}
             WORKING_DIRECTORY ${src_basedir}
             DEPENDS ${src_files} ${dc_deps}
         )
@@ -605,7 +605,7 @@ endmacro()
 # Define an optional 'D' CMake linker language for the static runtime libs,
 # using LDC as archiver. LDC handles (cross-)archiving internally via LLVM
 # and supports LTO objects.
-set(CMAKE_D_CREATE_STATIC_LIBRARY "${LDC_EXE_FULL} -lib -of=<TARGET> <OBJECTS>")
+set(CMAKE_D_CREATE_STATIC_LIBRARY "${NMC_EXE_FULL} -lib -of=<TARGET> <OBJECTS>")
 foreach(f ${D_FLAGS})
     append("\"${f}\"" CMAKE_D_CREATE_STATIC_LIBRARY)
 endforeach()
@@ -909,7 +909,7 @@ foreach(libname ${libs_to_install})
         install(FILES       $<TARGET_LINKER_FILE:${libname}>
                 DESTINATION ${destination_dir})
         # when included from the LDC parent build, install .dll and .pdb into bin/
-        if(LDC_EXE)
+        if(NMC_EXE)
             set(destination_dir ${CMAKE_INSTALL_PREFIX}/bin)
         endif()
         # .dll in bin or lib dir

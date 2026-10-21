@@ -125,7 +125,7 @@ namespace {
 
 // This function exits the program.
 void printVersion(llvm::raw_ostream &OS) {
-  OS << "LDC - the LLVM D compiler (" << ldc::ldc_version << "):\n";
+  OS << "NMC (" << ldc::ldc_version << "):\n";
   OS << "  based on DMD " << ldc::dmd_version << " and LLVM "
      << ldc::llvm_version << "\n";
   OS << "  built with " << ldc::built_with_Dcompiler_version << "\n";
@@ -143,7 +143,6 @@ void printVersion(llvm::raw_ostream &OS) {
     CPU = "(unknown)";
   }
   OS << "  Host CPU: " << CPU << "\n";
-  OS << "  https://dlang.org - https://wiki.dlang.org/LDC\n";
   OS << "\n";
 
   // Without explicitly flushing here, only the target list is visible when
@@ -305,7 +304,7 @@ void parseCommandLine(Strings &sourceFiles) {
 
   cl::ParseCommandLineOptions(filteredArgs.size(),
                               const_cast<char **>(filteredArgs.data()),
-                              "LDC - the LLVM D compiler\n");
+                              "NMC\n");
 
   if (opts::printTargetFeaturesHelp()) {
     auto triple = llvm::Triple(cfg_triple);
@@ -996,7 +995,13 @@ void registerPredefinedTargetVersions() {
 /// Registers all predefined D version identifiers for the current
 /// configuration with VersionCondition.
 void registerPredefinedVersions() {
+  
+  // Kept for backwards compatibility with LDC
   VersionCondition::addPredefinedGlobalIdent("LDC");
+
+  // For anything added to NMC that may not be present in LDC.
+  VersionCondition::addPredefinedGlobalIdent("NMC");
+
   VersionCondition::addPredefinedGlobalIdent("all");
   VersionCondition::addPredefinedGlobalIdent("D_Version2");
 

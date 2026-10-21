@@ -13,7 +13,7 @@ runs:
           # /d/a/1/install => D:/a/1/install
           absInstallDir=$(cygpath --mixed "$absInstallDir")
         fi
-        confs=( install/etc/ldc2.conf/* )
+        confs=( install/etc/nmc.conf/* )
         perl -pi -e "s|$absInstallDir/|%%ldcbinarypath%%/../|g" "${confs[@]}"
         cat "${confs[@]}"
 

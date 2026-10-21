@@ -103,8 +103,8 @@ unittest
 
 struct CfgPaths
 {
-    string cfgBaseDir; /// ldc2.conf directory
-    string ldcBinaryDir; /// ldc2.exe binary dir
+    string cfgBaseDir; /// nmc.conf directory
+    string ldcBinaryDir; /// nmc.exe binary dir
 
     this(const(char)* cfPath, const(char)* binDir)
     {
@@ -118,9 +118,9 @@ struct CfgPaths
 string replacePlaceholders(string str, CfgPaths cfgPaths)
 {
     return str
-        .replace("%%ldcbinarypath%%", cfgPaths.ldcBinaryDir)
-        .replace("%%ldcconfigpath%%", cfgPaths.cfgBaseDir)
-        .replace("%%ldcversion%%", cast(string) global.ldc_version);
+        .replace("%%nmcbinarypath%%", cfgPaths.ldcBinaryDir)
+        .replace("%%nmcconfigpath%%", cfgPaths.cfgBaseDir)
+        .replace("%%nmcversion%%", cast(string) global.ldc_version);
 }
 
 /++ Check that a section only contains known config keys

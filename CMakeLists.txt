@@ -8,7 +8,7 @@ if(POLICY CMP0132)
 endif()
 if(${CMAKE_VERSION} VERSION_GREATER "3.26.9")
     # Prevent implicit dependencies for custom commands, e.g.,
-    # `obj/ldc2.o` depending on `lib/libldc.a` with LDC_LINK_MANUALLY=ON.
+    # `obj/nmc.o` depending on `lib/libldc.a` with NMC_LINK_MANUALLY=ON.
     # Only supported since CMake v3.27 unfortunately.
     set(CMAKE_ADD_CUSTOM_COMMAND_DEPENDS_EXPLICIT_ONLY ON)
 endif()
@@ -43,20 +43,20 @@ string(REGEX REPLACE "[^;]*LLVMTableGen[^;]*;?" "" LLVM_LIBRARIES "${LLVM_LIBRAR
 
 # Information about which targets LLVM was built to target
 foreach(LLVM_SUPPORTED_TARGET ${LLVM_TARGETS_TO_BUILD})
-    add_definitions("-DLDC_LLVM_SUPPORTED_TARGET_${LLVM_SUPPORTED_TARGET}=1")
+    add_definitions("-DNMC_LLVM_SUPPORTED_TARGET_${LLVM_SUPPORTED_TARGET}=1")
 endforeach()
 
 # Set MLIR support variables if it is found.
 # FIXME: LLVM 14+ (`mlir::OwningModuleRef` replacement)
-if(NOT LDC_WITH_MLIR STREQUAL "OFF" AND LLVM_VERSION_MAJOR LESS 14)
+if(NOT NMC_WITH_MLIR STREQUAL "OFF" AND LLVM_VERSION_MAJOR LESS 14)
     include(FindMLIR)
     if(MLIR_FOUND)
-        message(STATUS "-- Building LDC with MLIR support (${MLIR_ROOT_DIR})")
+        message(STATUS "-- Building NMC with MLIR support (${MLIR_ROOT_DIR})")
         include_directories(${MLIR_INCLUDE_DIR})
-        add_definitions("-DLDC_MLIR_ENABLED")
+        add_definitions("-DNMC_MLIR_ENABLED")
         set(LLVM_LIBRARIES "${MLIR_LIBRARIES}" ${LLVM_LIBRARIES})
     else()
-        message(STATUS "-- Building LDC without MLIR support: not found")
+        message(STATUS "-- Building NMC without MLIR support: not found")
     endif()
 endif()
 
@@ -71,7 +71,7 @@ include(GetLinuxDistribution)
 #
 
 # Version information
-set(LDC_VERSION "1.43.0") # May be overridden by git hash tag
+set(NMC_VERSION "1.43.0") # May be overridden by git hash tag
 set(DMDFE_MAJOR_VERSION   2)
 set(DMDFE_MINOR_VERSION   113)
 set(DMDFE_PATCH_VERSION   0)
@@ -83,27 +83,27 @@ set(PROGRAM_PREFIX "" CACHE STRING "Prepended to ldc/ldmd binary names")
 set(PROGRAM_SUFFIX "" CACHE STRING "Appended to ldc/ldmd binary names")
 set(INCLUDE_INSTALL_DIR ${CMAKE_INSTALL_PREFIX}/include/d CACHE PATH "Path to install D modules to")
 
-# Note: LIB_SUFFIX should perhaps be renamed to LDC_LIBDIR_SUFFIX.
+# Note: LIB_SUFFIX should perhaps be renamed to NMC_LIBDIR_SUFFIX.
 set(LIB_SUFFIX "" CACHE STRING "Appended to the library installation directory. Set to '64' to install libraries into ${PREFIX}/lib64.")
 
 set(COMPILE_D_MODULES_SEPARATELY OFF CACHE BOOL "Compile each D module separately (instead of all at once). Useful for many CPU cores and/or iterative development; generated executables will be somewhat slower.")
 
-set(LDC_ENABLE_ASSERTIONS "${LLVM_ENABLE_ASSERTIONS}" CACHE BOOL "Enable LDC assertions. Defaults to the LLVM assertions mode; overriding may cause LDC segfaults!")
+set(NMC_ENABLE_ASSERTIONS "${LLVM_ENABLE_ASSERTIONS}" CACHE BOOL "Enable NMC assertions. Defaults to the LLVM assertions mode; overriding may cause NMC segfaults!")
 
-# Allow user to specify mimalloc.o location, to be linked with `ldc2` only
-set(ALTERNATIVE_MALLOC_O   ""     CACHE STRING "If specified, adds ALTERNATIVE_MALLOC_O object file to LDC link, to override the CRT malloc.")
+# Allow user to specify mimalloc.o location, to be linked with `nmc` only
+set(ALTERNATIVE_MALLOC_O   ""     CACHE STRING "If specified, adds ALTERNATIVE_MALLOC_O object file to NMC link, to override the CRT malloc.")
 
 # Most linux distributions have a policy of not bundling dependencies like zlib
 set(PHOBOS_SYSTEM_ZLIB OFF CACHE BOOL "Use system zlib instead of Phobos' vendored version")
 
 # Force use of softfloat for compiler
-option(LDC_FORCE_SOFTFLOAT_REAL "Force LDC to be built with 80-bit real in software" OFF)
+option(NMC_FORCE_SOFTFLOAT_REAL "Force NMC to be built with 80-bit real in software" OFF)
 
 if(D_VERSION EQUAL 1)
     message(FATAL_ERROR "D version 1 is no longer supported.
 Please consider using D version 2 or checkout the 'd1' git branch for the last version supporting D version 1.")
 elseif(D_VERSION EQUAL 2)
-    set(LDC_EXE ldc2)
+    set(NMC_EXE nmc)
     set(LDMD_EXE ldmd2)
     set(RUNTIME druntime)
     append("-DDMDV2" CMAKE_CXX_FLAGS)
@@ -111,7 +111,7 @@ else()
     message(FATAL_ERROR "unsupported D version")
 endif()
 
-set(LDC_EXE_NAME ${PROGRAM_PREFIX}${LDC_EXE}${PROGRAM_SUFFIX})
+set(NMC_EXE_NAME ${PROGRAM_PREFIX}${NMC_EXE}${PROGRAM_SUFFIX})
 set(LDMD_EXE_NAME ${PROGRAM_PREFIX}${LDMD_EXE}${PROGRAM_SUFFIX})
 
 # Setup D compiler flags (DMD syntax, which also works with LDMD).
@@ -131,13 +131,13 @@ if(NOT MSVC_IDE)
         append("-O -inline -release" DFLAGS_BUILD_TYPE)
     endif()
 
-    if(LDC_ENABLE_ASSERTIONS)
+    if(NMC_ENABLE_ASSERTIONS)
         string(REPLACE " -release" "" DFLAGS_BUILD_TYPE "${DFLAGS_BUILD_TYPE}")
     endif()
 endif()
 
 if(MSVC)
-    set(LDC_FORCE_SOFTFLOAT_REAL ON)
+    set(NMC_FORCE_SOFTFLOAT_REAL ON)
     if(CMAKE_SIZEOF_VOID_P EQUAL 8)
         message(STATUS "Let D host compiler output 64-bit object files")
         append("-m64" DFLAGS_BASE)
@@ -169,18 +169,18 @@ if(MSVC)
     endforeach()
 endif()
 
-if (LDC_FORCE_SOFTFLOAT_REAL)
-    append("-version=LDC_real_softfloat" DFLAGS_LDC)
-    append("-DLDC_real_softfloat" LDC_CXXFLAGS)
+if (NMC_FORCE_SOFTFLOAT_REAL)
+    append("-version=NMC_real_softfloat" DFLAGS_NMC)
+    append("-DNMC_real_softfloat" NMC_CXXFLAGS)
 endif()
 
-# Use separate compiler flags for the frontend and for the LDC-specific parts,
+# Use separate compiler flags for the frontend and for the NMC-specific parts,
 # as enabling warnings on the DMD frontend only leads to a lot of clutter in
 # the output (LLVM_CXXFLAGS sometimes already includes -Wall).
-set(LDC_CXXFLAGS)
+set(NMC_CXXFLAGS)
 if(CMAKE_COMPILER_IS_GNUCXX OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang"))
     if(NOT MSVC) # not for Windows-clang
-        append("-Wall -Wextra" LDC_CXXFLAGS)
+        append("-Wall -Wextra" NMC_CXXFLAGS)
     endif()
     # Disable some noisy warnings:
     #  * -Wunused-parameter and -Wcomment trigger for LLVM headers
@@ -192,16 +192,16 @@ if(CMAKE_COMPILER_IS_GNUCXX OR (${CMAKE_CXX_COMPILER_ID} MATCHES "Clang"))
     #  * -Wgnu-anonymous-struct and -Wnested-anon-types trigger for tokens.h.
     #  * -Wgnu-redeclared-enum triggers for various frontend headers.
     #  * -Wunused-private-field triggers for expression.h.
-    append("-Wno-unused-parameter -Wno-comment -Wno-missing-field-initializers -Wno-non-virtual-dtor" LDC_CXXFLAGS)
+    append("-Wno-unused-parameter -Wno-comment -Wno-missing-field-initializers -Wno-non-virtual-dtor" NMC_CXXFLAGS)
     if ((${CMAKE_CXX_COMPILER_ID} MATCHES "Clang"))
-        append("-Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-gnu-redeclared-enum -Wno-unused-private-field" LDC_CXXFLAGS)
+        append("-Wno-gnu-anonymous-struct -Wno-nested-anon-types -Wno-gnu-redeclared-enum -Wno-unused-private-field" NMC_CXXFLAGS)
         # clang trying to eagerly anticipate linker errors wrt. static class template
         # members leads to false positives (e.g., instantiated/defined in D):
         # 'instantiation of variable required here, but no definition is available'
-        append("-Wno-undefined-var-template" LDC_CXXFLAGS)
+        append("-Wno-undefined-var-template" NMC_CXXFLAGS)
     endif()
     if(CMAKE_COMPILER_IS_GNUCXX AND NOT CMAKE_C_COMPILER_VERSION VERSION_LESS "4.7.0")
-        append("-Wno-pedantic" LDC_CXXFLAGS)
+        append("-Wno-pedantic" NMC_CXXFLAGS)
     endif()
 endif()
 
@@ -214,16 +214,16 @@ if(MSVC)
     append("/D_HAS_EXCEPTIONS=0" CMAKE_CXX_FLAGS)
 
     # disable warning C4201: nonstandard extension used: nameless struct/union
-    append("/wd4201" LDC_CXXFLAGS)
+    append("/wd4201" NMC_CXXFLAGS)
 endif()
 # Append -mminimal-toc for gcc 4.0.x - 4.5.x on ppc64
 if( CMAKE_COMPILER_IS_GNUCXX
     AND CMAKE_SYSTEM_PROCESSOR MATCHES "ppc64|powerpc64"
     AND CMAKE_C_COMPILER_VERSION VERSION_LESS "4.6.0" )
-    append("-mminimal-toc" LDC_CXXFLAGS)
+    append("-mminimal-toc" NMC_CXXFLAGS)
 endif()
 if(UNIX)
-    append("-DLDC_POSIX" LDC_CXXFLAGS)
+    append("-DNMC_POSIX" NMC_CXXFLAGS)
 endif()
 set(SANITIZE_CXXFLAGS)
 set(SANITIZE_LDFLAGS)
@@ -235,9 +235,9 @@ if(SANITIZE)
         message(WARNING "Option SANITIZE specified but compiler is not clang.")
     endif()
 endif()
-append("${SANITIZE_CXXFLAGS}" LDC_CXXFLAGS)
+append("${SANITIZE_CXXFLAGS}" NMC_CXXFLAGS)
 if(PHOBOS_SYSTEM_ZLIB)
-    append("-DPHOBOS_SYSTEM_ZLIB" LDC_CXXFLAGS)
+    append("-DPHOBOS_SYSTEM_ZLIB" NMC_CXXFLAGS)
 endif()
 # LLVM_CXXFLAGS may contain -Werror which causes compile errors with dmd source
 string(REPLACE "-Werror " "" LLVM_CXXFLAGS ${LLVM_CXXFLAGS})
@@ -258,9 +258,9 @@ else()
     separate_arguments(LLVM_LDFLAGS UNIX_COMMAND "${LLVM_LDFLAGS}")
 endif()
 
-option(LDC_FULLY_STATIC "Posix: Link most executables (compiler and tools) as fully-static binaries" OFF)
+option(NMC_FULLY_STATIC "Posix: Link most executables (compiler and tools) as fully-static binaries" OFF)
 set(FULLY_STATIC_LDFLAG)
-if(UNIX AND LDC_FULLY_STATIC)
+if(UNIX AND NMC_FULLY_STATIC)
     set(FULLY_STATIC_LDFLAG "-static")
 endif()
 
@@ -284,32 +284,32 @@ if(NOT TAG MATCHES "NOTFOUND")
         # out.
         string(LENGTH "${TAG}" taglen)
         MATH(EXPR taglen "${taglen} - 1")
-        string(SUBSTRING "${TAG}" 1 ${taglen} LDC_VERSION)
+        string(SUBSTRING "${TAG}" 1 ${taglen} NMC_VERSION)
     else()
-        set(LDC_VERSION "${TAG}")
+        set(NMC_VERSION "${TAG}")
     endif()
 else()
     get_git_head_revision(REFSPEC HASH FALSE)
     if(NOT HASH STREQUAL "GITDIR-NOTFOUND")
-        # Append git hash to LDC_VERSION
-        string(SUBSTRING "${HASH}" 0 7 LDC_VERSION_HASH)
-        set(LDC_VERSION "${LDC_VERSION}-git-${LDC_VERSION_HASH}")
+        # Append git hash to NMC_VERSION
+        string(SUBSTRING "${HASH}" 0 7 NMC_VERSION_HASH)
+        set(NMC_VERSION "${NMC_VERSION}-git-${NMC_VERSION_HASH}")
 
         # Append "-dirty" when the working copy is dirty
         git_describe(GIT_DIRTY --dirty)
         if (GIT_DIRTY MATCHES ".*-dirty")
-            set(LDC_VERSION "${LDC_VERSION}-dirty")
+            set(NMC_VERSION "${NMC_VERSION}-dirty")
         endif()
     endif()
 endif()
-message(STATUS "LDC version identifier: ${LDC_VERSION}")
-string(REGEX MATCH "^([0-9]+)\\.([0-9]+)" _ldc_ver_match "${LDC_VERSION}")
+message(STATUS "NMC version identifier: ${NMC_VERSION}")
+string(REGEX MATCH "^([0-9]+)\\.([0-9]+)" _ldc_ver_match "${NMC_VERSION}")
 if(_ldc_ver_match)
-    set(LDC_VERSION_MAJOR ${CMAKE_MATCH_1})
-    set(LDC_VERSION_MINOR ${CMAKE_MATCH_2})
+    set(NMC_VERSION_MAJOR ${CMAKE_MATCH_1})
+    set(NMC_VERSION_MINOR ${CMAKE_MATCH_2})
 else()
-    set(LDC_VERSION_MAJOR 0)
-    set(LDC_VERSION_MINOR 0)
+    set(NMC_VERSION_MAJOR 0)
+    set(NMC_VERSION_MINOR 0)
 endif()
 configure_file(driver/ldc-version.cpp.in driver/ldc-version.cpp)
 configure_file(driver/ldc_version.d.in driver/ldc_version.d)
@@ -375,7 +375,7 @@ set(DRV_HDR
 list(REMOVE_ITEM FE_SRC_D
     ${PROJECT_SOURCE_DIR}/dmd/root/man.d
 )
-set(LDC_CXX_SOURCE_FILES
+set(NMC_CXX_SOURCE_FILES
     ${FE_HDR}
     ${GEN_SRC}
     ${GEN_HDR}
@@ -385,7 +385,7 @@ set(LDC_CXX_SOURCE_FILES
     ${DRV_SRC_EXTRA}
     ${DRV_HDR}
 )
-set(LDC_D_SOURCE_FILES
+set(NMC_D_SOURCE_FILES
     ${FE_SRC_D}
     ${GEN_SRC_D}
     ${IR_SRC_D}
@@ -401,41 +401,41 @@ endif()
 
 
 #
-# Configure the build system to use LTO and/or PGO while building LDC
+# Configure the build system to use LTO and/or PGO while building NMC
 #
 include(HandleLTOPGOBuildOptions)
 
 #
 # Enable Dynamic compilation if supported for this platform and LLVM version.
 #
-set(LDC_DYNAMIC_COMPILE "AUTO" CACHE STRING "Support dynamic compilation (ON|OFF). Enabled by default; not supported for LLVM < 18.")
-option(LDC_DYNAMIC_COMPILE_USE_CUSTOM_PASSES "Use custom LDC passes in jit" ON)
-if(LDC_DYNAMIC_COMPILE STREQUAL "AUTO")
+set(NMC_DYNAMIC_COMPILE "AUTO" CACHE STRING "Support dynamic compilation (ON|OFF). Enabled by default; not supported for LLVM < 18.")
+option(NMC_DYNAMIC_COMPILE_USE_CUSTOM_PASSES "Use custom NMC passes in jit" ON)
+if(NMC_DYNAMIC_COMPILE STREQUAL "AUTO")
     # FIXME: dynamic-compile regressions with LLVM 20
     if(LLVM_VERSION_MAJOR LESS 20)
-        set(LDC_DYNAMIC_COMPILE ON)
+        set(NMC_DYNAMIC_COMPILE ON)
     else()
-        set(LDC_DYNAMIC_COMPILE OFF)
+        set(NMC_DYNAMIC_COMPILE OFF)
     endif()
 endif()
 # https://llvm.org/docs/JITLink.html for the list of supported platforms
 if(CMAKE_SYSTEM_PROCESSOR MATCHES "x86_64|x64|amd64|aarch64|arm64|riscv64|loongarch64")
-    set(_LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT ON)
+    set(_NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT ON)
 else()
-    set(_LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT OFF)
+    set(_NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT OFF)
 endif()
 # Disable LLVM JITLink on Windows for now, currently does not work very well on Windows
 if(WIN32)
-    set(_LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT OFF)
+    set(_NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT OFF)
 endif()
-option(LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK "Use the experimental but faster LLVM JITLink dynamic code linker" "${_LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT}")
-message(STATUS "-- Building LDC with dynamic compilation support (LDC_DYNAMIC_COMPILE): ${LDC_DYNAMIC_COMPILE}")
-if(LDC_DYNAMIC_COMPILE)
-    add_definitions(-DLDC_DYNAMIC_COMPILE)
-    add_definitions(-DLDC_DYNAMIC_COMPILE_API_VERSION=4)
+option(NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK "Use the experimental but faster LLVM JITLink dynamic code linker" "${_NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK_DEFAULT}")
+message(STATUS "-- Building NMC with dynamic compilation support (NMC_DYNAMIC_COMPILE): ${NMC_DYNAMIC_COMPILE}")
+if(NMC_DYNAMIC_COMPILE)
+    add_definitions(-DNMC_DYNAMIC_COMPILE)
+    add_definitions(-DNMC_DYNAMIC_COMPILE_API_VERSION=4)
 endif()
-if (LDC_DYNAMIC_COMPILE_USE_LLVM_JITLINK)
-    add_compile_definitions(LDC_JITRT_USE_JITLINK)
+if (NMC_DYNAMIC_COMPILE_USE_LLVM_JITLINK)
+    add_compile_definitions(NMC_JITRT_USE_JITLINK)
 endif()
 
 #
@@ -443,49 +443,49 @@ endif()
 #
 
 include_directories(. dmd)
-append("-I${PROJECT_SOURCE_DIR}" DFLAGS_LDC)
-append("-I${PROJECT_BINARY_DIR}" DFLAGS_LDC)
-append("-J${PROJECT_SOURCE_DIR}/dmd/res" DFLAGS_LDC)
+append("-I${PROJECT_SOURCE_DIR}" DFLAGS_NMC)
+append("-I${PROJECT_BINARY_DIR}" DFLAGS_NMC)
+append("-J${PROJECT_SOURCE_DIR}/dmd/res" DFLAGS_NMC)
 
-append("-version=IN_LLVM" DFLAGS_LDC)
-append("-DIN_LLVM" LDC_CXXFLAGS)
-# Predefine LDC_INSTALL_PREFIX as raw string literal, requiring shell + CMake escaping.
+append("-version=IN_LLVM" DFLAGS_NMC)
+append("-DIN_LLVM" NMC_CXXFLAGS)
+# Predefine NMC_INSTALL_PREFIX as raw string literal, requiring shell + CMake escaping.
 # E.g., for CMAKE_INSTALL_PREFIX=`C:\dir with space`:
-#   g++ "-DLDC_INSTALL_PREFIX=R\"(C:\dir with space)\"" ...
-#   => LDC_INSTALL_PREFIX defined as `R"(C:\dir with space)"`
-append("\"-DLDC_INSTALL_PREFIX=R\\\"(${CMAKE_INSTALL_PREFIX})\\\"\"" LDC_CXXFLAGS)
-append("\"-DLDC_LIBDIR_SUFFIX=R\\\"(${LIB_SUFFIX})\\\"\"" LDC_CXXFLAGS)
-append("-DLDC_HOST_${D_COMPILER_ID}=1" LDC_CXXFLAGS)
-append("-DLDC_HOST_FE_VER=${D_COMPILER_FE_VERSION}" LDC_CXXFLAGS)
+#   g++ "-DNMC_INSTALL_PREFIX=R\"(C:\dir with space)\"" ...
+#   => NMC_INSTALL_PREFIX defined as `R"(C:\dir with space)"`
+append("\"-DNMC_INSTALL_PREFIX=R\\\"(${CMAKE_INSTALL_PREFIX})\\\"\"" NMC_CXXFLAGS)
+append("\"-DNMC_LIBDIR_SUFFIX=R\\\"(${LIB_SUFFIX})\\\"\"" NMC_CXXFLAGS)
+append("-DNMC_HOST_${D_COMPILER_ID}=1" NMC_CXXFLAGS)
+append("-DNMC_HOST_FE_VER=${D_COMPILER_FE_VERSION}" NMC_CXXFLAGS)
 # If the LLVM is shared, add its lib dir to the hardcoded list used for library lookups.
 if(LLVM_IS_SHARED)
-    append("\"-DLDC_LLVM_LIBDIR=R\\\"(${LLVM_LIBRARY_DIRS})\\\"\"" LDC_CXXFLAGS)
+    append("\"-DNMC_LLVM_LIBDIR=R\\\"(${LLVM_LIBRARY_DIRS})\\\"\"" NMC_CXXFLAGS)
 endif()
 
 #
 # LLD integration (requires headers & libs)
 #
-if(NOT DEFINED LDC_WITH_LLD)
+if(NOT DEFINED NMC_WITH_LLD)
     if(EXISTS "${LLVM_INCLUDE_DIRS}/lld/Common/Driver.h")
-        set(LDC_WITH_LLD ON)
+        set(NMC_WITH_LLD ON)
     else()
-        set(LDC_WITH_LLD OFF)
+        set(NMC_WITH_LLD OFF)
     endif()
 endif()
-if(LDC_WITH_LLD)
-    append("-DLDC_WITH_LLD" LDC_CXXFLAGS)
+if(NMC_WITH_LLD)
+    append("-DNMC_WITH_LLD" NMC_CXXFLAGS)
 endif()
-message(STATUS "-- Building LDC with integrated LLD linker (LDC_WITH_LLD): ${LDC_WITH_LLD}")
+message(STATUS "-- Building NMC with integrated LLD linker (NMC_WITH_LLD): ${NMC_WITH_LLD}")
 
-message(STATUS "-- Building LDC with enabled assertions (LDC_ENABLE_ASSERTIONS): ${LDC_ENABLE_ASSERTIONS}")
-if(LDC_ENABLE_ASSERTIONS)
-    append("-UNDEBUG" LDC_CXXFLAGS)
+message(STATUS "-- Building NMC with enabled assertions (NMC_ENABLE_ASSERTIONS): ${NMC_ENABLE_ASSERTIONS}")
+if(NMC_ENABLE_ASSERTIONS)
+    append("-UNDEBUG" NMC_CXXFLAGS)
     # avoid MSVC warning D9025 about "-DNDEBUG ... -UNDEBUG"
     string(REGEX REPLACE "(^| )[/-]D *NDEBUG( |$)" "\\1-UNDEBUG\\2" CMAKE_CXX_FLAGS_RELEASE "${CMAKE_CXX_FLAGS_RELEASE}")
     string(REGEX REPLACE "(^| )[/-]D *NDEBUG( |$)" "\\1-UNDEBUG\\2" CMAKE_CXX_FLAGS_MINSIZEREL "${CMAKE_CXX_FLAGS_MINSIZEREL}")
     string(REGEX REPLACE "(^| )[/-]D *NDEBUG( |$)" "\\1-UNDEBUG\\2" CMAKE_CXX_FLAGS_RELWITHDEBINFO "${CMAKE_CXX_FLAGS_RELWITHDEBINFO}")
 else()
-    append("-DNDEBUG" LDC_CXXFLAGS)
+    append("-DNDEBUG" NMC_CXXFLAGS)
 endif()
 
 #
@@ -502,85 +502,85 @@ if(TEST_COVERAGE)
 endif()
 
 #
-# Set up the main ldc/ldc2 target.
+# Set up the main ldc/nmc target.
 #
-set(LDC_LIB_LANGUAGE CXX)
+set(NMC_LIB_LANGUAGE CXX)
 if(BUILD_SHARED)
-    set(LDC_LIB_TYPE SHARED)
+    set(NMC_LIB_TYPE SHARED)
 else()
-    set(LDC_LIB_TYPE STATIC)
+    set(NMC_LIB_TYPE STATIC)
     if("${D_COMPILER_ID}" STREQUAL "LDMD" AND D_COMPILER_FE_VERSION GREATER 2074)
-        # Define a 'HOST_D' CMake linker language for the static LDCShared
+        # Define a 'HOST_D' CMake linker language for the static NMCShared
         # library, using the host ldmd2 compiler ≥ v1.5 as archiver, which
         # supports LTO objects and cross-archiving.
         set(CMAKE_HOST_D_CREATE_STATIC_LIBRARY "\"${D_COMPILER}\" -lib ${D_COMPILER_FLAGS} ${DFLAGS_BASE} -of=<TARGET> <OBJECTS>")
-        set(LDC_LIB_LANGUAGE HOST_D)
+        set(NMC_LIB_LANGUAGE HOST_D)
     endif()
 endif()
 
-set(LDC_LIB LDCShared)
-set(LDC_LIB_EXTRA_SOURCES "")
+set(NMC_LIB NMCShared)
+set(NMC_LIB_EXTRA_SOURCES "")
 if(MSVC_IDE) # Visual Studio generator
     # Add the .d files as (Visual D) source files to this lib, so that they show up somewhere.
-    set(LDC_LIB_EXTRA_SOURCES ${LDC_D_SOURCE_FILES})
-    set_property(SOURCE ${LDC_LIB_EXTRA_SOURCES} PROPERTY VS_TOOL_OVERRIDE "DCompile")
-    # 'Clear' the original list for the custom commands below, producing ldc2.exe and ldc2-unittest.exe -
+    set(NMC_LIB_EXTRA_SOURCES ${NMC_D_SOURCE_FILES})
+    set_property(SOURCE ${NMC_LIB_EXTRA_SOURCES} PROPERTY VS_TOOL_OVERRIDE "DCompile")
+    # 'Clear' the original list for the custom commands below, producing nmc.exe and nmc-unittest.exe -
     # we still need a dummy .d file.
-    set(LDC_D_SOURCE_FILES "${PROJECT_SOURCE_DIR}/dmd/root/man.d")
+    set(NMC_D_SOURCE_FILES "${PROJECT_SOURCE_DIR}/dmd/root/man.d")
     # Mark this main library target as (bold) startup project for the generated Visual Studio solution.
-    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${LDC_LIB})
+    set_property(DIRECTORY ${CMAKE_CURRENT_SOURCE_DIR} PROPERTY VS_STARTUP_PROJECT ${NMC_LIB})
 endif()
-add_library(${LDC_LIB} ${LDC_LIB_TYPE} ${LDC_CXX_SOURCE_FILES} ${LDC_LIB_EXTRA_SOURCES})
+add_library(${NMC_LIB} ${NMC_LIB_TYPE} ${NMC_CXX_SOURCE_FILES} ${NMC_LIB_EXTRA_SOURCES})
 set_target_properties(
-    ${LDC_LIB} PROPERTIES
+    ${NMC_LIB} PROPERTIES
     RUNTIME_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/bin
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib${LIB_SUFFIX}
     ARCHIVE_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib${LIB_SUFFIX}
     ARCHIVE_OUTPUT_NAME ldc
     LIBRARY_OUTPUT_NAME ldc
     RUNTIME_OUTPUT_NAME ldc
-    COMPILE_FLAGS "${LLVM_CXXFLAGS} ${LDC_CXXFLAGS} ${EXTRA_CXXFLAGS}"
-    LINKER_LANGUAGE ${LDC_LIB_LANGUAGE}
+    COMPILE_FLAGS "${LLVM_CXXFLAGS} ${NMC_CXXFLAGS} ${EXTRA_CXXFLAGS}"
+    LINKER_LANGUAGE ${NMC_LIB_LANGUAGE}
     LINK_FLAGS "${SANITIZE_LDFLAGS}"
     # Use a custom .props file to set up Visual D (import paths, predefined versions...).
     VS_USER_PROPS "${PROJECT_SOURCE_DIR}/cmake/VisualD.props"
 )
 # LDFLAGS should actually be in target property LINK_FLAGS, but this works, and gets around linking problems
-target_link_libraries(${LDC_LIB} ${LLVM_LIBRARIES} ${LLVM_LDFLAGS})
+target_link_libraries(${NMC_LIB} ${LLVM_LIBRARIES} ${LLVM_LDFLAGS})
 if(WIN32)
-    target_link_libraries(${LDC_LIB} imagehlp psapi)
+    target_link_libraries(${NMC_LIB} imagehlp psapi)
 elseif(${CMAKE_SYSTEM_NAME} MATCHES "Linux")
-    target_link_libraries(${LDC_LIB} dl)
+    target_link_libraries(${NMC_LIB} dl)
 endif()
 
-set(LDC_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${LDC_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
+set(NMC_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${NMC_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
 set(LDMD_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${LDMD_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
 
-# Figure out how to link the main LDC executable, for which we need to take the
+# Figure out how to link the main NMC executable, for which we need to take the
 # LLVM flags into account.
-set(LDC_LINKERFLAG_LIST ${SANITIZE_LDFLAGS} ${LLVM_LIBRARIES} ${LLVM_LDFLAGS})
+set(NMC_LINKERFLAG_LIST ${SANITIZE_LDFLAGS} ${LLVM_LIBRARIES} ${LLVM_LDFLAGS})
 if(MSVC)
-    # Issue 1297 – set LDC's stack to 16 MiB for Windows builds (default: 1 MiB).
-    list(APPEND LDC_LINKERFLAG_LIST "/STACK:16777216")
+    # Issue 1297 – set NMC's stack to 16 MiB for Windows builds (default: 1 MiB).
+    list(APPEND NMC_LINKERFLAG_LIST "/STACK:16777216")
     # VS 2017+: Use undocumented /NOOPTTLS MS linker switch to keep on emitting
     # a .tls section. Required for older host druntime versions, otherwise the
     # GC TLS ranges are garbage starting with VS 2017 Update 15.3.
     if(MSVC_VERSION GREATER 1900 AND D_COMPILER_FE_VERSION LESS 2076)
-        list(APPEND LDC_LINKERFLAG_LIST "/NOOPTTLS")
+        list(APPEND NMC_LINKERFLAG_LIST "/NOOPTTLS")
     endif()
 endif()
-if(LDC_WITH_LLD)
+if(NMC_WITH_LLD)
     if(LLVM_VERSION_MAJOR GREATER 21)
         if(MSVC)
-            list(APPEND LDC_LINKERFLAG_LIST LLVMDTLTO.lib)
+            list(APPEND NMC_LINKERFLAG_LIST LLVMDTLTO.lib)
         else()
-            set(LDC_LINKERFLAG_LIST -lLLVMDTLTO ${LDC_LINKERFLAG_LIST})
+            set(NMC_LINKERFLAG_LIST -lLLVMDTLTO ${NMC_LINKERFLAG_LIST})
         endif()
     endif()
     if(MSVC)
-        list(APPEND LDC_LINKERFLAG_LIST lldMinGW.lib lldCOFF.lib lldELF.lib lldMachO.lib lldWasm.lib lldCommon.lib LLVMSymbolize.lib)
+        list(APPEND NMC_LINKERFLAG_LIST lldMinGW.lib lldCOFF.lib lldELF.lib lldMachO.lib lldWasm.lib lldCommon.lib LLVMSymbolize.lib)
     else()
-        set(LDC_LINKERFLAG_LIST -llldMinGW -llldCOFF -llldELF -llldMachO -llldWasm -llldCommon -lLLVMSymbolize ${LDC_LINKERFLAG_LIST})
+        set(NMC_LINKERFLAG_LIST -llldMinGW -llldCOFF -llldELF -llldMachO -llldWasm -llldCommon -lLLVMSymbolize ${NMC_LINKERFLAG_LIST})
     endif()
     if(LLVM_IS_SHARED)
         # LLD's ELF backend references zstd (OutputSection::maybeCompress). A shared
@@ -593,24 +593,24 @@ if(LDC_WITH_LLD)
         # (that port ships a shared LLVM with the exact same gap).
         find_package(zstd QUIET)
         if(TARGET zstd::libzstd_shared)
-            list(APPEND LDC_LINKERFLAG_LIST "$<TARGET_LINKER_FILE:zstd::libzstd_shared>")
+            list(APPEND NMC_LINKERFLAG_LIST "$<TARGET_LINKER_FILE:zstd::libzstd_shared>")
         elseif(TARGET zstd::libzstd_static)
-            list(APPEND LDC_LINKERFLAG_LIST "$<TARGET_LINKER_FILE:zstd::libzstd_static>")
+            list(APPEND NMC_LINKERFLAG_LIST "$<TARGET_LINKER_FILE:zstd::libzstd_static>")
         endif()
     endif()
 endif()
 
-if(NOT DEFINED LDC_LINK_MANUALLY)
+if(NOT DEFINED NMC_LINK_MANUALLY)
     if(MSVC)
         # Use the D host compiler for linking D executables.
-        set(LDC_LINK_MANUALLY OFF)
+        set(NMC_LINK_MANUALLY OFF)
     else()
         # On Unix-like systems, default to having CMake link the D executables via the C++ compiler.
         # (Using the D compiler needs -Xcc and -gcc support, see file BuildDExecutable.cmake.)
-        set(LDC_LINK_MANUALLY ON)
+        set(NMC_LINK_MANUALLY ON)
     endif()
 endif()
-if(LDC_LINK_MANUALLY AND NOT DEFINED D_LINKER_ARGS)
+if(NMC_LINK_MANUALLY AND NOT DEFINED D_LINKER_ARGS)
     include(ExtractDMDSystemLinker)
     message(STATUS "Host D compiler linker program: ${D_LINKER_COMMAND}")
     message(STATUS "Host D compiler linker flags: ${D_LINKER_ARGS}")
@@ -618,23 +618,23 @@ endif()
 
 # Plugin support
 if(UNIX)
-    set(LDC_ENABLE_PLUGINS_DEFAULT ON)
+    set(NMC_ENABLE_PLUGINS_DEFAULT ON)
 else()
-    set(LDC_ENABLE_PLUGINS_DEFAULT OFF)
+    set(NMC_ENABLE_PLUGINS_DEFAULT OFF)
 endif()
-set(LDC_ENABLE_PLUGINS ${LDC_ENABLE_PLUGINS_DEFAULT} CACHE BOOL "Build LDC with plugin support (increases binary size)")
-if(LDC_ENABLE_PLUGINS)
-    add_definitions(-DLDC_ENABLE_PLUGINS)
+set(NMC_ENABLE_PLUGINS ${NMC_ENABLE_PLUGINS_DEFAULT} CACHE BOOL "Build NMC with plugin support (increases binary size)")
+if(NMC_ENABLE_PLUGINS)
+    add_definitions(-DNMC_ENABLE_PLUGINS)
 
     if(APPLE)
-        # Need to disable dead_strip with LDC host compilers.
+        # Need to disable dead_strip with NMC host compilers.
         if("${D_COMPILER_ID}" STREQUAL "LDMD")
-            if(LDC_LINK_MANUALLY)
+            if(NMC_LINK_MANUALLY)
                 # suboptimal - applies to all D executables (incl. ldmd2, ldc-build-runtime, ldc-prune-cache)
                 list(REMOVE_ITEM D_LINKER_ARGS "-Wl,-dead_strip")
             else()
-                # just for ldc2 (and ldc2-unittest)
-                append("-disable-linker-strip-dead" DFLAGS_LDC)
+                # just for nmc (and nmc-unittest)
+                append("-disable-linker-strip-dead" DFLAGS_NMC)
             endif()
         endif()
     elseif(UNIX)
@@ -646,14 +646,14 @@ if(LDC_ENABLE_PLUGINS)
         set(CMAKE_REQUIRED_QUIET ${CMAKE_REQUIRED_QUIET_BAK})
 
         if(LINKER_ACCEPTS_EXPORT_DYNAMIC_FLAG)
-            set(LDC_LINKERFLAG_LIST "${LDC_LINKERFLAG_LIST};-Wl,--export-dynamic")
+            set(NMC_LINKERFLAG_LIST "${NMC_LINKERFLAG_LIST};-Wl,--export-dynamic")
         else()
             message(WARNING "Linker does not accept --export-dynamic, user plugins may give missing symbol errors upon load")
         endif()
     endif()
 endif()
-message(STATUS "-- Building LDC with plugin support (LDC_ENABLE_PLUGINS): ${LDC_ENABLE_PLUGINS}")
-message(STATUS "-- Linking LDC with flags: ${ALTERNATIVE_MALLOC_O};${LDC_LINKERFLAG_LIST}")
+message(STATUS "-- Building NMC with plugin support (NMC_ENABLE_PLUGINS): ${NMC_ENABLE_PLUGINS}")
+message(STATUS "-- Linking NMC with flags: ${ALTERNATIVE_MALLOC_O};${NMC_LINKERFLAG_LIST}")
 
 if(NOT WIN32 AND NOT CYGWIN)
     # Unify symbol visibility with LLVM to silence linker warning "direct access in function X to global
@@ -661,21 +661,21 @@ if(NOT WIN32 AND NOT CYGWIN)
     # different translation units being compiled with different visibility settings."
     # See LLVM's cmake/modules/HandleLLVMOptions.cmake.
     check_cxx_compiler_flag("-fvisibility-inlines-hidden" SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG)
-    if (LDC_ENABLE_PLUGINS AND NOT APPLE)
+    if (NMC_ENABLE_PLUGINS AND NOT APPLE)
         # For plugins, we shouldn't apply this flag because it hides the inline methods of e.g. Visitor. On macOS it's OK to add.
     elseif (${SUPPORTS_FVISIBILITY_INLINES_HIDDEN_FLAG})
-        append("-fvisibility-inlines-hidden" LDC_CXXFLAGS)
+        append("-fvisibility-inlines-hidden" NMC_CXXFLAGS)
     endif()
 endif()
 
 build_d_executable(
-    "${LDC_EXE}"
-    "${LDC_EXE_FULL}"
-    "${LDC_D_SOURCE_FILES}"
-    "${DFLAGS_BUILD_TYPE} ${DFLAGS_LDC}"
-    "${ALTERNATIVE_MALLOC_O};${LDC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
+    "${NMC_EXE}"
+    "${NMC_EXE_FULL}"
+    "${NMC_D_SOURCE_FILES}"
+    "${DFLAGS_BUILD_TYPE} ${DFLAGS_NMC}"
+    "${ALTERNATIVE_MALLOC_O};${NMC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
     "${FE_RES}"
-    "${LDC_LIB}"
+    "${NMC_LIB}"
     ${COMPILE_D_MODULES_SEPARATELY}
 )
 
@@ -683,7 +683,7 @@ if(MSVC_IDE)
     # the IDE generator is a multi-config one
     # so copy the config file into the correct bin subfolder
     # (different outputs no longer feasible for custom commands, so disabled)
-    #    add_custom_command(TARGET ${LDC_EXE} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/etc/${LDC_EXE}.conf $<TARGET_FILE_DIR:${LDC_EXE}> COMMENT "Copy config file ${LDC_EXE}.conf")
+    #    add_custom_command(TARGET ${NMC_EXE} POST_BUILD COMMAND ${CMAKE_COMMAND} -E copy ${PROJECT_BINARY_DIR}/etc/${NMC_EXE}.conf $<TARGET_FILE_DIR:${NMC_EXE}> COMMENT "Copy config file ${NMC_EXE}.conf")
 endif()
 
 
@@ -691,10 +691,10 @@ endif()
 # LDMD
 #
 set_source_files_properties(driver/args.cpp driver/exe_path.cpp driver/ldmd.cpp driver/response.cpp PROPERTIES
-    COMPILE_FLAGS "${LLVM_CXXFLAGS} ${LDC_CXXFLAGS}"
-    COMPILE_DEFINITIONS LDC_EXE_NAME="${LDC_EXE_NAME}"
+    COMPILE_FLAGS "${LLVM_CXXFLAGS} ${NMC_CXXFLAGS}"
+    COMPILE_DEFINITIONS NMC_EXE_NAME="${NMC_EXE_NAME}"
 )
-add_library(LDMD_CXX_LIB ${LDC_LIB_TYPE} driver/args.cpp driver/exe_path.cpp driver/ldmd.cpp driver/response.cpp driver/args.h driver/exe_path.h)
+add_library(LDMD_CXX_LIB ${NMC_LIB_TYPE} driver/args.cpp driver/exe_path.cpp driver/ldmd.cpp driver/response.cpp driver/args.h driver/exe_path.h)
 set_target_properties(
     LDMD_CXX_LIB PROPERTIES
     LIBRARY_OUTPUT_DIRECTORY ${PROJECT_BINARY_DIR}/lib${LIB_SUFFIX}
@@ -708,7 +708,7 @@ build_d_executable(
     "${LDMD_EXE_FULL}"
     "${LDMD_D_SOURCE_FILES}"
     "${DFLAGS_BUILD_TYPE}"
-    "${LDC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
+    "${NMC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
     ""
     "LDMD_CXX_LIB"
     ${COMPILE_D_MODULES_SEPARATELY}
@@ -745,27 +745,27 @@ endfunction()
 # Locate LLVM's LTO binary and use it
 #
 if(WIN32 OR LLVM_IS_SHARED)
-    set(LDC_INSTALL_LTOPLUGIN_DEFAULT OFF)
+    set(NMC_INSTALL_LTOPLUGIN_DEFAULT OFF)
 else()
-    set(LDC_INSTALL_LTOPLUGIN_DEFAULT ON)
+    set(NMC_INSTALL_LTOPLUGIN_DEFAULT ON)
 endif()
-set(LDC_INSTALL_LTOPLUGIN ${LDC_INSTALL_LTOPLUGIN_DEFAULT} CACHE BOOL "Copy/install the LTO plugin from the LLVM package when available.")
-if (LDC_INSTALL_LTOPLUGIN)
+set(NMC_INSTALL_LTOPLUGIN ${NMC_INSTALL_LTOPLUGIN_DEFAULT} CACHE BOOL "Copy/install the LTO plugin from the LLVM package when available.")
+if (NMC_INSTALL_LTOPLUGIN)
     if(APPLE)
         set(LLVM_LTO_BINARY ${LLVM_LIBRARY_DIRS}/libLTO.dylib)
-        set(LDC_LTO_BINARY_NAME libLTO.dylib)
+        set(NMC_LTO_BINARY_NAME libLTO.dylib)
     elseif(UNIX)
         set(LLVM_LTO_BINARY ${LLVM_LIBRARY_DIRS}/LLVMgold.so)
-        set(LDC_LTO_BINARY_NAME LLVMgold-ldc.so)
+        set(NMC_LTO_BINARY_NAME LLVMgold-ldc.so)
     endif()
     if(EXISTS ${LLVM_LTO_BINARY})
-        message(STATUS "-- Including LTO linker plugin (LDC_INSTALL_LTOPLUGIN): ON (${LLVM_LTO_BINARY})")
-        copy_and_install_llvm_library(${LLVM_LTO_BINARY} ${LDC_LTO_BINARY_NAME} TRUE)
+        message(STATUS "-- Including LTO linker plugin (NMC_INSTALL_LTOPLUGIN): ON (${LLVM_LTO_BINARY})")
+        copy_and_install_llvm_library(${LLVM_LTO_BINARY} ${NMC_LTO_BINARY_NAME} TRUE)
     else()
-        message(STATUS "-- Including LTO linker plugin (LDC_INSTALL_LTOPLUGIN): OFF (cannot find ${LLVM_LTO_BINARY})")
+        message(STATUS "-- Including LTO linker plugin (NMC_INSTALL_LTOPLUGIN): OFF (cannot find ${LLVM_LTO_BINARY})")
     endif()
 else()
-    message(STATUS "-- Including LTO linker plugin (LDC_INSTALL_LTOPLUGIN): ${LDC_INSTALL_LTOPLUGIN}")
+    message(STATUS "-- Including LTO linker plugin (NMC_INSTALL_LTOPLUGIN): ${NMC_INSTALL_LTOPLUGIN}")
 endif()
 
 #
@@ -800,11 +800,11 @@ if(NOT EXISTS "${COMPILER_RT_LIBDIR}")
     message(WARNING "Expected compiler-rt directory '${COMPILER_RT_LIBDIR}' does not exist. To include PGO and sanitizers support, COMPILER_RT_BASE_DIR and/or COMPILER_RT_LIBDIR_OS might need to be set explicitly. See docs/compiler_rt.md.")
 endif()
 if(LLVM_IS_SHARED)
-    set(LDC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT OFF)
+    set(NMC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT OFF)
 else()
-    set(LDC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT ON)
+    set(NMC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT ON)
 endif()
-set(LDC_INSTALL_LLVM_RUNTIME_LIBS ${LDC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT} CACHE BOOL "Copy/install LLVM compiler-rt libraries (ASan, libFuzzer, ...) from LLVM/Clang into LDC lib dir when available.")
+set(NMC_INSTALL_LLVM_RUNTIME_LIBS ${NMC_INSTALL_LLVM_RUNTIME_LIBS_DEFAULT} CACHE BOOL "Copy/install LLVM compiler-rt libraries (ASan, libFuzzer, ...) from LLVM/Clang into NMC lib dir when available.")
 function(copy_compilerrt_lib llvm_lib_name ldc_lib_name fixup_dylib)
     set(llvm_lib_path ${COMPILER_RT_LIBDIR}/${llvm_lib_name})
     if(EXISTS ${llvm_lib_path})
@@ -814,8 +814,8 @@ function(copy_compilerrt_lib llvm_lib_name ldc_lib_name fixup_dylib)
         message(STATUS "--  - not found: ${llvm_lib_path}")
     endif()
 endfunction()
-message(STATUS "-- Including LLVM compiler-rt libraries (LDC_INSTALL_LLVM_RUNTIME_LIBS): ${LDC_INSTALL_LLVM_RUNTIME_LIBS}")
-if (LDC_INSTALL_LLVM_RUNTIME_LIBS)
+message(STATUS "-- Including LLVM compiler-rt libraries (NMC_INSTALL_LLVM_RUNTIME_LIBS): ${NMC_INSTALL_LLVM_RUNTIME_LIBS}")
+if (NMC_INSTALL_LLVM_RUNTIME_LIBS)
     # Locate LLVM sanitizer runtime libraries, and copy them to our lib folder
 
     if(APPLE)
@@ -830,12 +830,12 @@ if (LDC_INSTALL_LLVM_RUNTIME_LIBS)
         copy_compilerrt_lib("libclang_rt.xray-fdr_osx.a"        "libldc_rt.xray-fdr.a"       FALSE)
         copy_compilerrt_lib("libclang_rt.xray-profiling_osx.a"  "libldc_rt.xray-profiling.a" FALSE)
     elseif(UNIX)
-        set(LDC_INSTALL_LLVM_RUNTIME_LIBS_ARCH "" CACHE STRING
+        set(NMC_INSTALL_LLVM_RUNTIME_LIBS_ARCH "" CACHE STRING
             "Non-Mac Posix: architecture used as libname suffix for the compiler-rt source libraries, e.g., 'aarch64'.")
-        if(LDC_INSTALL_LLVM_RUNTIME_LIBS_ARCH STREQUAL "")
+        if(NMC_INSTALL_LLVM_RUNTIME_LIBS_ARCH STREQUAL "")
             set(compilerrt_suffix "")
         else()
-            set(compilerrt_suffix "-${LDC_INSTALL_LLVM_RUNTIME_LIBS_ARCH}")
+            set(compilerrt_suffix "-${NMC_INSTALL_LLVM_RUNTIME_LIBS_ARCH}")
         endif()
 
         copy_compilerrt_lib("libclang_rt.asan${compilerrt_suffix}.a"           "libldc_rt.asan.a"     FALSE)
@@ -872,7 +872,7 @@ endif()
 # If everything else if insufficient, the user can specify
 # -DCOMPILER_RT_LIBDIR_CONFIG to embed an arbitrary value.
 if(NOT DEFINED COMPILER_RT_LIBDIR_CONFIG)
-    if(NOT LDC_INSTALL_LLVM_RUNTIME_LIBS)
+    if(NOT NMC_INSTALL_LLVM_RUNTIME_LIBS)
         set(COMPILER_RT_LIBDIR_CONFIG "${COMPILER_RT_LIBDIR}")
     endif()
 endif()
@@ -915,7 +915,7 @@ if(TARGET gen_gccbuiltins)
     add_custom_target(gccbuiltins DEPENDS ${GCCBUILTINS})
 
     # make sure they are generated when building the compiler (as link-time dependency)
-    add_dependencies(${LDC_EXE} gccbuiltins)
+    add_dependencies(${NMC_EXE} gccbuiltins)
 endif()
 
 #
@@ -924,7 +924,7 @@ endif()
 add_subdirectory(tools)
 
 #
-# Compiler ldc2.conf configuration
+# Compiler nmc.conf configuration
 #
 
 set(switches "-defaultlib=phobos2-ldc,druntime-ldc")
@@ -963,7 +963,7 @@ makeConfSection(NAME "51-target-wasm-base"
 # Add a convenience config for *naked* wasm targets, omitting druntime/Phobos/libc
 # (and preferring built-in lld for linking) automatically.
 set(wasm_naked_switches)
-if(LDC_WITH_LLD)
+if(NMC_WITH_LLD)
     list(APPEND wasm_naked_switches -link-internally)
 else()
     # clang as default cross-linker driver usually works, with -nostdlib
@@ -994,48 +994,48 @@ endif()
 #
 enable_testing()
 
-# LDC unittest executable (D unittests only).
-set(LDC_UNITTEST_EXE ${LDC_EXE}-unittest)
-set(LDC_UNITTEST_EXE_NAME ${PROGRAM_PREFIX}${LDC_UNITTEST_EXE}${PROGRAM_SUFFIX})
-set(LDC_UNITTEST_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${LDC_UNITTEST_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
-# Remove a potential `-fprofile-use` in DFLAGS_LDC to disable PGO for the
-# unittest executable (profile gathered from normal ldc2 executable).
-set(DFLAGS_LDC_UT "${DFLAGS_LDC}")
-string(REGEX REPLACE "(^| )-fprofile-use=[^ ]+( |$)" " " DFLAGS_LDC_UT ${DFLAGS_LDC_UT})
+# NMC unittest executable (D unittests only).
+set(NMC_UNITTEST_EXE ${NMC_EXE}-unittest)
+set(NMC_UNITTEST_EXE_NAME ${PROGRAM_PREFIX}${NMC_UNITTEST_EXE}${PROGRAM_SUFFIX})
+set(NMC_UNITTEST_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${NMC_UNITTEST_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
+# Remove a potential `-fprofile-use` in DFLAGS_NMC to disable PGO for the
+# unittest executable (profile gathered from normal nmc executable).
+set(DFLAGS_NMC_UT "${DFLAGS_NMC}")
+string(REGEX REPLACE "(^| )-fprofile-use=[^ ]+( |$)" " " DFLAGS_NMC_UT ${DFLAGS_NMC_UT})
 build_d_executable(
-    "${LDC_UNITTEST_EXE}"
-    "${LDC_UNITTEST_EXE_FULL}"
-    "${LDC_D_SOURCE_FILES}"
-    "-g -unittest ${DFLAGS_LDC_UT}"
-    "${LDC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
+    "${NMC_UNITTEST_EXE}"
+    "${NMC_UNITTEST_EXE_FULL}"
+    "${NMC_D_SOURCE_FILES}"
+    "-g -unittest ${DFLAGS_NMC_UT}"
+    "${NMC_LINKERFLAG_LIST};${FULLY_STATIC_LDFLAG}"
     ""
-    "${LDC_LIB}"
+    "${NMC_LIB}"
     ${COMPILE_D_MODULES_SEPARATELY}
 )
-set_target_properties("${LDC_UNITTEST_EXE}" PROPERTIES EXCLUDE_FROM_ALL ON)
-add_test(NAME build-ldc2-unittest COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target ldc2-unittest)
-add_test(NAME ldc2-unittest COMMAND ${LDC_UNITTEST_EXE_FULL} --version)
-set_tests_properties(ldc2-unittest PROPERTIES DEPENDS build-ldc2-unittest)
+set_target_properties("${NMC_UNITTEST_EXE}" PROPERTIES EXCLUDE_FROM_ALL ON)
+add_test(NAME build-nmc-unittest COMMAND "${CMAKE_COMMAND}" --build ${CMAKE_BINARY_DIR} --target nmc-unittest)
+add_test(NAME nmc-unittest COMMAND ${NMC_UNITTEST_EXE_FULL} --version)
+set_tests_properties(nmc-unittest PROPERTIES DEPENDS build-nmc-unittest)
 
-set(_LDC_BUILD_RUNTIME_DEFAULT ON)
+set(_NMC_BUILD_RUNTIME_DEFAULT ON)
 if(CMAKE_CROSSCOMPILING)
-    set(_LDC_BUILD_RUNTIME_DEFAULT OFF)
+    set(_NMC_BUILD_RUNTIME_DEFAULT OFF)
 endif()
-option(LDC_BUILD_RUNTIME "Build the runtime libraries" ${_LDC_BUILD_RUNTIME_DEFAULT})
+option(NMC_BUILD_RUNTIME "Build the runtime libraries" ${_NMC_BUILD_RUNTIME_DEFAULT})
 
-if(LDC_BUILD_RUNTIME)
+if(NMC_BUILD_RUNTIME)
     add_subdirectory(runtime)
 
     # POST_BUILD can't be used for targets in a different directory so
     # runtime/CMakeLists.txt can't directly add the commands.
-    if(_LDC_POST_BUILD_COMMANDS)
-        add_custom_command(TARGET ${LDC_EXE} POST_BUILD
-            ${_LDC_POST_BUILD_COMMANDS}
-            BYPRODUCTS ${_LDC_POST_BUILD_BYPRODUCTS}
+    if(_NMC_POST_BUILD_COMMANDS)
+        add_custom_command(TARGET ${NMC_EXE} POST_BUILD
+            ${_NMC_POST_BUILD_COMMANDS}
+            BYPRODUCTS ${_NMC_POST_BUILD_BYPRODUCTS}
         )
     endif()
 else()
-    message(STATUS "NOT building the runtime libraries (LDC_BUILD_RUNTIME=OFF)")
+    message(STATUS "NOT building the runtime libraries (NMC_BUILD_RUNTIME=OFF)")
 endif()
 
 if(D_VERSION EQUAL 2)
@@ -1045,12 +1045,12 @@ add_subdirectory(tests)
 
 # ldc-build-runtime tool
 configure_file(${PROJECT_SOURCE_DIR}/runtime/ldc-build-runtime.d.in ${PROJECT_BINARY_DIR}/ldc-build-runtime.d @ONLY)
-set(LDC_BUILD_RUNTIME_EXE ldc-build-runtime)
-set(LDC_BUILD_RUNTIME_EXE_NAME ${PROGRAM_PREFIX}${LDC_BUILD_RUNTIME_EXE}${PROGRAM_SUFFIX})
-set(LDC_BUILD_RUNTIME_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${LDC_BUILD_RUNTIME_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
+set(NMC_BUILD_RUNTIME_EXE ldc-build-runtime)
+set(NMC_BUILD_RUNTIME_EXE_NAME ${PROGRAM_PREFIX}${NMC_BUILD_RUNTIME_EXE}${PROGRAM_SUFFIX})
+set(NMC_BUILD_RUNTIME_EXE_FULL ${PROJECT_BINARY_DIR}/bin/${NMC_BUILD_RUNTIME_EXE_NAME}${CMAKE_EXECUTABLE_SUFFIX})
 build_d_executable(
-    "${LDC_BUILD_RUNTIME_EXE}"
-    "${LDC_BUILD_RUNTIME_EXE_FULL}"
+    "${NMC_BUILD_RUNTIME_EXE}"
+    "${NMC_BUILD_RUNTIME_EXE_FULL}"
     "${PROJECT_BINARY_DIR}/ldc-build-runtime.d"
     "${DFLAGS_BUILD_TYPE}"
     "" # must not be fully static for std.net.curl support (loading libcurl dynamically)
@@ -1063,19 +1063,19 @@ build_d_executable(
 # Install target.
 #
 
-install(PROGRAMS ${LDC_EXE_FULL} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS ${NMC_EXE_FULL} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 install(PROGRAMS ${LDMD_EXE_FULL} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
-install(PROGRAMS ${LDC_BUILD_RUNTIME_EXE_FULL} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
+install(PROGRAMS ${NMC_BUILD_RUNTIME_EXE_FULL} DESTINATION ${CMAKE_INSTALL_PREFIX}/bin)
 if(${BUILD_SHARED})
     # For now, only install libldc if explicitly building the shared library.
-    # While it might theoretically be possible to use LDC as a static library
+    # While it might theoretically be possible to use NMC as a static library
     # as well, for the time being this just bloats the normal packages.
-    install(TARGETS ${LDC_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
+    install(TARGETS ${NMC_LIB} DESTINATION ${CMAKE_INSTALL_PREFIX}/lib${LIB_SUFFIX})
 endif()
 
 # Add some documentation to the installed config files
 if(NOT DONT_INSTALL_CONF)
-    install(FILES "ldc2.conf.header" DESTINATION "${CONF_INST_DIR}/ldc2.conf" RENAME 00-docs.conf)
+    install(FILES "nmc.conf.header" DESTINATION "${CONF_INST_DIR}/nmc.conf" RENAME 00-docs.conf)
 endif()
 
 if(${CMAKE_SYSTEM_NAME} MATCHES "Linux")

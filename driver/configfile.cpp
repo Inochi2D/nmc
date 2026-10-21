@@ -92,7 +92,7 @@ bool ConfigFile::locate(std::string &pathstr) {
   // temporary configuration
 
   llvm::SmallString<128> p;
-  const char *filename = "ldc2.conf";
+  const char *filename = "nmc.conf";
 
 #define APPEND_FILENAME_AND_RETURN_IF_EXISTS                                   \
   {                                                                            \
@@ -113,9 +113,9 @@ bool ConfigFile::locate(std::string &pathstr) {
 
   // user configuration
 
-  // try ~/.ldc
+  // try ~/.nmc
   p = getUserHomeDirectory();
-  sys::path::append(p, ".ldc");
+  sys::path::append(p, ".nmc");
   APPEND_FILENAME_AND_RETURN_IF_EXISTS
 
 #if _WIN32
@@ -149,7 +149,7 @@ bool ConfigFile::locate(std::string &pathstr) {
   // try the install-prefix/etc/ldc
   p = LDC_INSTALL_PREFIX;
   sys::path::append(p, "etc");
-  sys::path::append(p, "ldc");
+  sys::path::append(p, "nmc");
   APPEND_FILENAME_AND_RETURN_IF_EXISTS
 
   // try /etc (absolute path)
@@ -157,7 +157,7 @@ bool ConfigFile::locate(std::string &pathstr) {
   APPEND_FILENAME_AND_RETURN_IF_EXISTS
 
   // try /etc/ldc (absolute path)
-  p = "/etc/ldc";
+  p = "/etc/nmc";
   APPEND_FILENAME_AND_RETURN_IF_EXISTS
 #endif
 
