@@ -183,12 +183,17 @@ int main(int argc, const char **argv) {
       argc, argv,
       "Split input into multiple parts separated by regex '^(.|//)--- ' and "
       "extract the part specified by '^(.|//)--- <part>'\n",
+#if LLVM_VERSION_MAJOR >= 24
+      /*Errs*/nullptr
+#else
 #if LLVM_VERSION_MAJOR >= 22
       /*Errs*/nullptr,
 #endif
       /*VFS*/nullptr,
       /*EnvVar=*/nullptr,
-      /*LongOptionsUseDoubleDash=*/true);
+      /*LongOptionsUseDoubleDash=*/true
+#endif
+  );
 
   if (input.empty())
     fatal("", "input filename is not specified");
