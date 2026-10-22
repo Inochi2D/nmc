@@ -91,7 +91,7 @@ StringRef attributes(LLVM_20_CONST ListInit* propertyList)
   return "";
 }
 
-void processRecord(raw_ostream& os, Record& rec, string arch)
+void processRecord(raw_ostream& os, const Record& rec, string arch)
 {
     if(!rec.getValue(BUILTIN_NAME_STRING))
         return;
@@ -160,7 +160,7 @@ bool emit(raw_ostream& os, LLVM_20_CONST RecordKeeper& records)
     const auto &defs = records.getDefs();
 
     for (const auto& d : defs)
-        processRecord(os, *d.second, arch);
+        processRecord(os, *d, arch);
 
     return false;
 }
