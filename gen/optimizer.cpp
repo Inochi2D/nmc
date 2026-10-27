@@ -457,7 +457,11 @@ void runOptimizationPasses(llvm::Module *M, llvm::TargetMachine *TM) {
 
   si.registerCallbacks(pic, &mam);
 
-  PassBuilder pb(TM, getPipelineTuningOptions(optLevelVal, sizeLevelVal),
+  PassBuilder pb(
+#if LLVM_VERSION_MAJOR >= 24
+                 M->getContext(),
+#endif 
+                 TM, getPipelineTuningOptions(optLevelVal, sizeLevelVal),
 #ifdef IN_JITRT
                  {}, &pic);
 #else
