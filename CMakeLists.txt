@@ -8,12 +8,12 @@ if(POLICY CMP0132)
 endif()
 if(${CMAKE_VERSION} VERSION_GREATER "3.26.9")
     # Prevent implicit dependencies for custom commands, e.g.,
-    # `obj/nmc.o` depending on `lib/libldc.a` with NMC_LINK_MANUALLY=ON.
+    # `obj/nmc.o` depending on `lib/libmmc.a` with NMC_LINK_MANUALLY=ON.
     # Only supported since CMake v3.27 unfortunately.
     set(CMAKE_ADD_CUSTOM_COMMAND_DEPENDS_EXPLICIT_ONLY ON)
 endif()
 
-project(ldc)
+project(nmc)
 
 set(CMAKE_MODULE_PATH ${CMAKE_MODULE_PATH} "${CMAKE_SOURCE_DIR}/cmake/Modules")
 

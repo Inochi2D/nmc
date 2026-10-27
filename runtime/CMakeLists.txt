@@ -26,6 +26,7 @@ if(NOT NMC_EXE)
     endif()
 endif()
 
+
 #
 # Main configuration.
 #
@@ -169,6 +170,7 @@ else()
     set(C_SYSTEM_LIBS_SHARED ${C_SYSTEM_LIBS})
 endif()
 
+
 message(STATUS "-- LDC runtime configuration:")
 message(STATUS "--  - Building 32/64-bit libraries (MULTILIB): ${MULTILIB}")
 message(STATUS "--  - Building shared libraries (BUILD_SHARED_LIBS): ${BUILD_SHARED_LIBS}")
@@ -288,6 +290,12 @@ if(PHOBOS2_DIR)
         if (HAVE_UNISTD_H)
             append("-DHAVE_UNISTD_H" CMAKE_C_FLAGS)
         endif()
+    endif()
+
+    # Ensure you don't try to build phobos without it present.
+    list(LENGTH PHOBOS2_D PHOBOS2_COUNT)
+    if(PHOBOS2_COUNT EQUAL 0)
+        message(FATAL_ERROR "phobos2 was requested to be built, but the folder is empty! (forgot to clone submodules?)")
     endif()
 endif()
 
