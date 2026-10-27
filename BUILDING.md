@@ -32,6 +32,9 @@ ninja -C nmbuild/ -j 16 install
 mkdir -p nmc
 cd nmc
 
+# NOTE: This is needed on macOS 27+ to avoid build errors.
+export MACOSX_DEPLOYMENT_TARGET=$(uname -r)
+
 # 1. Clone dependencies and NMC.
 git clone https://github.com/facebook/zstd.git
 git clone https://github.com/llvm/llvm-project.git
