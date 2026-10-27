@@ -111,6 +111,13 @@ else()
     message(FATAL_ERROR "unsupported D version")
 endif()
 
+# Needed if zstd is compiled into LLVM out directory.
+if(APPLE)
+    set(CMAKE_MACOSX_RPATH 1)
+    list(APPEND CMAKE_BUILD_RPATH "${LLVM_ROOT_DIR}/lib")
+    message(STATUS "-- Set macOS build rpath: \"${CMAKE_BUILD_RPATH}\"")
+endif()
+
 set(NMC_EXE_NAME ${PROGRAM_PREFIX}${NMC_EXE}${PROGRAM_SUFFIX})
 set(LDMD_EXE_NAME ${PROGRAM_PREFIX}${LDMD_EXE}${PROGRAM_SUFFIX})
 

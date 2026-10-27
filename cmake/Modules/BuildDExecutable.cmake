@@ -75,10 +75,22 @@ function(build_d_executable target_name output_exe d_src_files compiler_args lin
     # Link to an executable.
     if(LDC_LINK_MANUALLY)
         add_executable(${target_name} ${object_files})
-        set_target_properties(${target_name} PROPERTIES
-            RUNTIME_OUTPUT_DIRECTORY ${output_dir}
-            LINKER_LANGUAGE          CXX
-        )
+        if(APPLE)
+            set_target_properties(${target_name} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY ${output_dir}
+                LINKER_LANGUAGE          CXX
+                INSTALL_RPATH 
+                "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/lib;./../lib"
+                BUILD_RPATH 
+                "${CMAKE_INSTALL_RPATH};${CMAKE_INSTALL_PREFIX}/lib;./../lib"
+            )
+        else()
+            set_target_properties(${target_name} PROPERTIES
+                RUNTIME_OUTPUT_DIRECTORY ${output_dir}
+                LINKER_LANGUAGE          CXX
+            )
+        endif()
+
         target_link_libraries(${target_name} ${link_deps} ${linker_args} ${D_LINKER_ARGS})
     else()
         # Use a response file on Windows when compiling separately, in order not to
@@ -97,6 +109,11 @@ function(build_d_executable target_name output_exe d_src_files compiler_args lin
 
         set(full_linker_args ${CMAKE_EXE_LINKER_FLAGS} ${linker_args} ${D_LINKER_ARGS})
         translate_linker_args(full_linker_args translated_linker_args)
+        
+        # Handle rpaths
+        if(APPLE)
+            set(translated_linker_args "-Xcc=-Wl,-rpath" "-Xcc=-Wl,${CMAKE_INSTALL_PREFIX}/lib" "-Xcc=-Wl,-rpath" "-Xcc=-Wl,./../lib" ${translated_linker_args})
+        endif()
 
         # We need to link against the C++ runtime library.
         if(NOT MSVC AND "${D_COMPILER_ID}" STREQUAL "LDMD" AND NOT "${dflags}" MATCHES "(^|;)-gcc=")
